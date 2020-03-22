@@ -48,7 +48,6 @@ services:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
       - POSTGRES_DB
-      - POSTGRES_PORT
       - LOGGING_LEVEL=20
     depends_on:
       - tor
@@ -70,6 +69,5 @@ services:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
       - POSTGRES_DB
-      - POSTGRES_PORT
     volumes:
       - ./data/postgres:/var/lib/postgresql/data:rw
