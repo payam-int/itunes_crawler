@@ -64,6 +64,8 @@ def worker():
                 time.sleep(10)
             except Exception:
                 time.sleep(1)
+                job.next_time_at = job.next_time_at + timedelta(seconds=60)
+                job.save()
             finally:
                 job.release()
 
