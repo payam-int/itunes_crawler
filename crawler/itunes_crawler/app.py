@@ -5,10 +5,9 @@ from datetime import datetime, timedelta
 import requests
 from peewee import Function, Select
 from prometheus_client import Summary
-from requests import ConnectTimeout
 
 from itunes_crawler import crawler, settings
-from itunes_crawler.models import Job, db, db_models, TopLevelCategory, Podcast
+from itunes_crawler.models import Job, db, db_models, TopLevelCategory, Podcast, PodcastItunesLookup, PodcastRss
 
 logger = logging.getLogger('app')
 REQUEST_TIME = Summary('job_processing_profiling', 'Time spent processing job', ('type',))
@@ -44,13 +43,13 @@ def bootstrap():
 
 def worker():
     while True:
-        with db:
+        try:
             job = Job.take()
             if not job:
                 time.sleep(5)
                 continue
             try:
-                with REQUEST_TIME.labels([job.type]).time():
+                with REQUEST_TIME.labels(job.type).time():
                     if job.type == Job.Types.TOP_LEVEL_CATEGORIES:
                         crawl_top_categories(job)
                     elif job.type == Job.Types.CATEGORY_LETTER:
@@ -59,13 +58,17 @@ def worker():
                         crawl_podcast(job)
 
                 job.next_time_at = datetime.now() + timedelta(seconds=job.interval)
+                job.last_success_at = datetime.now()
                 job.save()
             except Exception as e:
                 job.next_time_at = job.next_time_at + timedelta(seconds=60)
                 job.save()
-                logger.error(str(e), extra={'exception': e})
+                raise e
             finally:
                 job.release()
+        except Exception as e:
+            logger.error(e, extra={'exception': e})
+            raise e
 
 
 def crawl_top_categories(job):
@@ -94,9 +97,10 @@ def crawl_category(job):
                 return
 
             for podcast in podcasts:
-                podcast.update({'category_id': category.id, 'category_page': page})
+                podcast.update({'category_id': category.id, 'category_page': page,
+                                'category_letter': metadata['letter']})
 
-            Podcast.insert_many(podcasts).on_conflict_ignore().execute()
+            Podcast.insert_many(podcasts).on_conflict_ignore().execute(db)
 
             jobs = []
             for podcast in podcasts:
@@ -106,7 +110,7 @@ def crawl_category(job):
                     'metadata': {'id': podcast['id']}
                 })
 
-            Job.insert_many(jobs).on_conflict_ignore().execute()
+            Job.insert_many(jobs).on_conflict_ignore().execute(db)
     except Exception as e:
         raise e
 
@@ -114,17 +118,22 @@ def crawl_category(job):
 def crawl_podcast(job):
     metadata = job.metadata
     podcast = Podcast.get_by_id(metadata['id'])
+    podcast_lookup = PodcastItunesLookup.get_or_none(id=podcast.id)
     try:
         lookup = crawler.get_lookup(metadata['id'])
         if lookup:
-            podcast.itunes_lookup = lookup
-            podcast.updated_at = datetime.now()
-            podcast.save()
+            podcast_lookup = podcast_lookup or PodcastItunesLookup(id=podcast.id)
+            podcast_lookup.itunes_lookup = lookup
+            podcast_lookup.updated_at = datetime.now()
+            podcast_lookup.save() or podcast_lookup.save(force_insert=True)
+
     except:
         pass
 
-    if podcast.itunes_lookup and 'feedUrl' in podcast.itunes_lookup:
-        feed_url = podcast.itunes_lookup['feedUrl']
+    if podcast_lookup and 'feedUrl' in podcast_lookup.itunes_lookup:
+        feed_url = podcast_lookup.itunes_lookup['feedUrl']
         rss = crawler.get_rss(feed_url)
-        podcast.rss = rss
-        podcast.save()
+        podcast_rss = PodcastRss.get_or_none(id=podcast.id) or PodcastRss(id=podcast.id)
+        podcast_rss.rss = rss
+        podcast_rss.updated_at = datetime.now()
+        podcast_rss.save() or podcast_rss.save(force_insert=True)

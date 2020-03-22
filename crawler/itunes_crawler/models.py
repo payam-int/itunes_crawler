@@ -1,11 +1,11 @@
 import datetime
+import json
 import logging
 import signal
 
 import peewee_extra_fields
 from peewee import PostgresqlDatabase, Model, CharField, TextField, DateTimeField, IntegerField, AutoField, \
-    ForeignKeyField, Field
-from playhouse.postgres_ext import JSONField
+    ForeignKeyField
 
 from itunes_crawler import settings
 
@@ -27,8 +27,12 @@ signal.signal(signal.SIGTERM, close_db)
 signal.signal(signal.SIGINT, close_db)
 
 
-class XMLField(Field):
-    field_type = 'xml'
+class JSONField(TextField):
+    def db_value(self, value):
+        return json.dumps(value)
+
+    def python_value(self, value):
+        return json.loads(value) if value is not None else None
 
 
 class BaseModel(Model):
@@ -47,11 +51,12 @@ class Job(BaseModel):
     metadata = JSONField(null=False, default={})
     interval = IntegerField()
     created_at = DateTimeField(default=datetime.datetime.now)
+    last_success_at = DateTimeField(null=True)
     next_time_at = DateTimeField(index=True, default=datetime.datetime.now)
 
     class Meta:
         indexes = (
-            ('type', 'metadata', True)
+            (('type', 'metadata'), True),
         )
 
     def __str__(self):
@@ -59,22 +64,19 @@ class Job(BaseModel):
 
     @staticmethod
     def take():
-        sorted_keys = [key.column_name for key in Job._meta.sorted_fields]
-        query_keys = ['j2.{0}'.format(key) for key in sorted_keys]
         table = Job._meta.table_name
-        job_data = db.execute_sql(
-            ('SELECT {} FROM (SELECT * FROM {} as j ' +
+        job_id = db.execute_sql(
+            ('SELECT j2.id FROM (SELECT * FROM {} as j ' +
              'WHERE j.next_time_at <= %s ORDER BY next_time_at) as j2 ' +
-             'WHERE pg_try_advisory_lock(%s, j2.id) LIMIT 1').format(",".join(query_keys), table),
+             'WHERE pg_try_advisory_lock(%s, j2.id) LIMIT 1').format(table),
             params=[datetime.datetime.now(), settings.JOB_LOCK_PREFIX]
         )
 
-        job_result = job_data.fetchall()
+        job_result = job_id.fetchall()
         if not job_result:
             return None
 
-        fields = dict(zip(sorted_keys, job_result[0]))
-        return Job(**fields)
+        return Job.get_by_id(job_result[0][0])
 
     def release(self):
         db.execute_sql('SELECT pg_advisory_unlock(%s, %s)', [settings.JOB_LOCK_PREFIX, self.id])
@@ -91,12 +93,25 @@ class Podcast(BaseModel):
     id = IntegerField(primary_key=True)
     itunes_title = TextField(null=False)
     itunes_link = TextField(null=False)
-    itunes_lookup = JSONField(null=True)
-    rss = TextField(null=True)
     category = ForeignKeyField(TopLevelCategory)
     category_page = IntegerField(null=False)
+    category_letter = CharField(null=False)
     created_at = DateTimeField(default=datetime.datetime.now)
     updated_at = DateTimeField(null=True)
 
 
-db_models = [TopLevelCategory, Job, Podcast]
+class PodcastItunesLookup(BaseModel):
+    id = IntegerField(primary_key=True)
+    itunes_lookup = JSONField(null=True)
+    created_at = DateTimeField(default=datetime.datetime.now)
+    updated_at = DateTimeField(null=True)
+
+
+class PodcastRss(BaseModel):
+    id = IntegerField(primary_key=True)
+    rss = TextField(null=True)
+    created_at = DateTimeField(default=datetime.datetime.now)
+    updated_at = DateTimeField(null=True)
+
+
+db_models = [TopLevelCategory, Job, Podcast, PodcastRss, PodcastItunesLookup]
