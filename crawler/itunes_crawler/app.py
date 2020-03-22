@@ -62,6 +62,8 @@ def worker():
                 job.save()
             except ConnectTimeout:
                 time.sleep(10)
+            except Exception:
+                time.sleep(1)
             finally:
                 job.release()
 
