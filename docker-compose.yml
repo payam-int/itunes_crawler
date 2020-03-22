@@ -1,0 +1,17 @@
+version: '3.4'
+services:
+  tor:
+    image: dperson/torproxy
+    ports:
+      - 9050:9050
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    ports:
+      - "${POSTGRES_PORT:5432}"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data

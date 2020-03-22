@@ -1,0 +1,75 @@
+version: '3.4'
+services:
+  mongo:
+    image: mongo:3
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.5
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node
+  graylog:
+    image: graylog/graylog:3.2
+    environment:
+      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_SECRET}
+      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD}
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
+    depends_on:
+      - mongo
+      - elasticsearch
+    ports:
+      - "${GRAYLOG_PORT}:9000"
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}"
+      - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}"
+    user: "0"
+    depends_on:
+      - prometheus
+  prometheus:
+    image: prom/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    volumes:
+      - ./config/prometheus/:/etc/prometheus/
+    ports:
+    - "9090:9090"
+  crawler:
+    build: ./crawler
+    environment:
+      - GRAYLOG_GELFUDP_LOGGER_HOST=graylog
+      - REQUESTS_PROXY_HTTP=socks5://tor:9050/
+      - REQUESTS_PROXY_HTTPS=socks5://tor:9050/
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - LOGGING_LEVEL=20
+    depends_on:
+      - tor
+      - graylog
+      - prometheus
+      - postgres
+    ports:
+      - 8000
+  tor:
+    image: dperson/torproxy
+    ports:
+      - 9050
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+    - "${POSTGRES_PORT}:5432"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_PORT
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data:rw

@@ -1,0 +1,15 @@
+global:
+  scrape_interval:     30s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 30s # By default, scrape targets every 15 seconds.
+  external_labels:
+    monitor: 'itunes-crawler'
+scrape_configs:
+  - job_name: 'crawlers'
+    scrape_interval: 30s
+    dns_sd_configs:
+      - names:
+          - "crawler"
+        type: A
+        port: 8000
+        refresh_interval: 30s
+
