@@ -60,12 +60,10 @@ def worker():
 
                 job.next_time_at = datetime.now() + timedelta(seconds=job.interval)
                 job.save()
-            except ConnectTimeout:
-                time.sleep(10)
-            except Exception:
-                time.sleep(1)
+            except Exception as e:
                 job.next_time_at = job.next_time_at + timedelta(seconds=60)
                 job.save()
+                logger.error(str(e), extra={'exception': e})
             finally:
                 job.release()
 

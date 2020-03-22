@@ -92,7 +92,7 @@ class Podcast(BaseModel):
     itunes_title = TextField(null=False)
     itunes_link = TextField(null=False)
     itunes_lookup = JSONField(null=True)
-    rss = XMLField(null=True)
+    rss = TextField(null=True)
     category = ForeignKeyField(TopLevelCategory)
     category_page = IntegerField(null=False)
     created_at = DateTimeField(default=datetime.datetime.now)
