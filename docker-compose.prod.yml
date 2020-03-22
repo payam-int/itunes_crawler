@@ -40,6 +40,7 @@ services:
     - "9090:9090"
   crawler:
     build: ./crawler
+    restart: always
     environment:
       - GRAYLOG_GELFUDP_LOGGER_HOST=graylog
       - REQUESTS_PROXY_HTTP=socks5://tor:9050/
