@@ -30,14 +30,14 @@ def bootstrap():
         try:
             ip = requests.get('https://ifconfig.me/ip', timeout=10, proxies=settings.REQUESTS_PROXY)
             if len(ip.content) > 0:
-                logger.info("Connected to internet.")
+                logger.info("Connected to the internet.")
                 break
         except Exception as e:
             logger.warning(e, extra={'proxy': settings.REQUESTS_PROXY})
         time.sleep(10)
-        logger.info("Waiting for internet connection...")
+        logger.info("Waiting for the internet connection...")
     else:
-        logger.error("Could not connect to internet.")
+        logger.error("Could not connect to the internet.")
         exit(1)
 
 
@@ -68,8 +68,6 @@ def worker():
                 job.release()
         except Exception as e:
             logger.error(e, extra={'exception': e})
-            raise e
-
 
 def crawl_top_categories(job):
     top_categories = crawler.scrap_categories()
