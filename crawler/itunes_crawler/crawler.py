@@ -1,13 +1,21 @@
 import gc
 import logging
 import re
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from prometheus_client import Summary
 
 from itunes_crawler import settings
 
 logger = logging.getLogger('itunes_crawler')
+REQUEST_TIME = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
+
+
+def _request_profiling(link):
+    hostname = urlparse(link).hostname
+    return REQUEST_TIME.labels(hostname).time()
 
 
 def _extract_itunes_id(link):
@@ -17,7 +25,8 @@ def _extract_itunes_id(link):
 def scrap_categories():
     link = 'https://podcasts.apple.com/us/genre/podcasts/id26'
     try:
-        response = requests.get(link, timeout=10, proxies=settings.REQUESTS_PROXY)
+        with _request_profiling(link):
+            response = requests.get(link, timeout=10, proxies=settings.REQUESTS_PROXY)
         response.raise_for_status()
     except Exception as e:
         logger.error('scrap_categories.request',
@@ -44,7 +53,8 @@ CATEGORY_LETTERS = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['*']
 def scrap_category_page(url, letter, page):
     link = "{}?letter={}&page={}".format(url, letter, page)
     try:
-        response = requests.get(link, timeout=10, proxies=settings.REQUESTS_PROXY)
+        with _request_profiling(link):
+            response = requests.get(link, timeout=10, proxies=settings.REQUESTS_PROXY)
         response.raise_for_status()
     except Exception as e:
         logger.error('scrap_category_page.request',
@@ -75,7 +85,8 @@ def scrap_category_page(url, letter, page):
 def get_lookup(id):
     url = "https://itunes.apple.com/us/lookup?id=" + str(id)
     try:
-        request = requests.get(url, timeout=30, proxies=settings.REQUESTS_PROXY)
+        with _request_profiling(url):
+            request = requests.get(url, timeout=30, proxies=settings.REQUESTS_PROXY)
         request.raise_for_status()
         lookup = request.json()
         return lookup['results'][0] if 'feedUrl' in lookup['results'][0] else None
