@@ -101,7 +101,8 @@ def get_lookup(id):
 def get_rss(url):
     rss = None
     try:
-        response = requests.get(url, timeout=30, proxies=settings.REQUESTS_PROXY)
+        with _request_profiling(url):
+            response = requests.get(url, timeout=30, proxies=settings.REQUESTS_PROXY)
         response.raise_for_status()
         return response.content.decode('utf-8')
     except Exception as e:
