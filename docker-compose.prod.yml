@@ -66,6 +66,7 @@ services:
     restart: always
     ports:
     - "${POSTGRES_PORT}:5432"
+    command: postgres -N 200
     environment:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
