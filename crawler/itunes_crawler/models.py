@@ -12,7 +12,7 @@ from itunes_crawler import settings
 logger = logging.getLogger('models')
 db = PostgresqlDatabase(settings.POSTGRES['database'], host=settings.POSTGRES['host'],
                         port=settings.POSTGRES['port'], user=settings.POSTGRES['user'],
-                        password=settings.POSTGRES['password'], autocommit=True,
+                        password=settings.POSTGRES['password'], autocommit=True, autorollback=True,
                         field_types=peewee_extra_fields.FIELD_TYPES, thread_safe=True)
 
 logger.info("Connected to database...")
