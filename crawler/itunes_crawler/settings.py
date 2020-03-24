@@ -30,5 +30,6 @@ PROMETHEUS_PORT = os.getenv('PROMETHEUS_PORT', '8000')
 JOB_LOCK_PREFIX = 10000
 
 SKIP_PROXY = [
-    'feeds.buzzsprout.com'
+    'feeds.buzzsprout.com',
+    'feed.podbean.com'
 ]
