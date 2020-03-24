@@ -1,27 +1,48 @@
 import gc
 import logging
 import re
+import time
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from prometheus_client import Summary
+from prometheus_client import Summary, Counter
+from requests import ConnectTimeout, HTTPError
 
 from itunes_crawler import settings
 
 logger = logging.getLogger('itunes_crawler')
 REQUEST_TIME = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
+EXCEPTION_COUNTER = Counter('http_exception_counter', 'Number of times with exception', ('host', 'type'))
 
 
-def _request_profiling(link):
-    hostname = urlparse(link).hostname
-    return REQUEST_TIME.labels(hostname).time()
-
-
-def _get_proxy(url):
-    if urlparse(url).hostname in settings.SKIP_PROXY:
+def _get_proxy(hostname):
+    if hostname in settings.SKIP_PROXY:
         return {}
     return settings.REQUESTS_PROXY
+
+
+def _get(url, *args, **kwargs):
+    hostname = urlparse(url).hostname
+    _kwargs = {'timeout': 10, 'proxies': _get_proxy(hostname)}
+    _kwargs.update(kwargs)
+
+    try:
+        start_timer = time.perf_counter()
+        response = requests.get(url, *args, **_kwargs)
+        response.raise_for_status()
+        REQUEST_TIME.labels(hostname).observe(time.perf_counter() - start_timer)
+        return response
+    except ConnectTimeout as e:
+        EXCEPTION_COUNTER.labels(hostname, 'ConnectTimeout').inc()
+        raise e
+    except HTTPError as e:
+        error_label = 'HTTP{}'.format(e.response.status_code)
+        EXCEPTION_COUNTER.labels(hostname, error_label).inc()
+        raise e
+    except Exception as e:
+        EXCEPTION_COUNTER.labels(hostname, 'Exception').inc()
+        raise e
 
 
 def _extract_itunes_id(link):
@@ -31,9 +52,7 @@ def _extract_itunes_id(link):
 def scrap_categories():
     url = 'https://podcasts.apple.com/us/genre/podcasts/id26'
     try:
-        with _request_profiling(url):
-            response = requests.get(url, timeout=10, proxies=_get_proxy(url))
-        response.raise_for_status()
+        response = _get(url, timeout=10, proxies=_get_proxy(url))
     except Exception as e:
         logger.error('scrap_categories.request',
                      extra={'url': url, 'exception': e})
@@ -59,8 +78,7 @@ CATEGORY_LETTERS = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['*']
 def scrap_category_page(url, letter, page):
     url = "{}?letter={}&page={}".format(url, letter, page)
     try:
-        with _request_profiling(url):
-            response = requests.get(url, timeout=10, proxies=_get_proxy(url))
+        response = _get(url, timeout=10, proxies=_get_proxy(url))
         response.raise_for_status()
     except Exception as e:
         logger.error('scrap_category_page.request',
@@ -91,10 +109,9 @@ def scrap_category_page(url, letter, page):
 def get_lookup(id):
     url = "https://itunes.apple.com/us/lookup?id=" + str(id)
     try:
-        with _request_profiling(url):
-            request = requests.get(url, timeout=30, proxies=_get_proxy(url))
-        request.raise_for_status()
-        lookup = request.json()
+        response = _get(url, timeout=30, proxies=_get_proxy(url))
+        response.raise_for_status()
+        lookup = response.json()
         return lookup['results'][0] if 'feedUrl' in lookup['results'][0] else None
     except Exception as e:
         logger.error('Itunes Lookup failed.',
@@ -107,8 +124,7 @@ def get_lookup(id):
 def get_rss(url):
     rss = None
     try:
-        with _request_profiling(url):
-            response = requests.get(url, timeout=30, proxies=_get_proxy(url))
+        response = _get(url, timeout=30, proxies=_get_proxy(url))
         response.raise_for_status()
         return response.content.decode('utf-8')
     except Exception as e:
