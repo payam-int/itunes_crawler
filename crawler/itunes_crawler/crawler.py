@@ -6,14 +6,14 @@ from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from prometheus_client import Summary, Counter
-from requests import ConnectTimeout, HTTPError
+from prometheus_client import Summary
+from requests import HTTPError
 
 from itunes_crawler import settings
 
 logger = logging.getLogger('itunes_crawler')
 REQUEST_TIME = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
-EXCEPTION_COUNTER = Counter('http_exception_counter', 'Number of times with exception', ('host', 'type'))
+EXCEPTION_TIME = Summary('http_request_exceptions_profiling', 'Time spent getting a url', ('host', 'type'))
 
 
 def _get_proxy(hostname):
@@ -27,21 +27,19 @@ def _get(url, *args, **kwargs):
     _kwargs = {'timeout': 10, 'proxies': _get_proxy(hostname)}
     _kwargs.update(kwargs)
 
+    start_timer = time.perf_counter()
     try:
-        start_timer = time.perf_counter()
         response = requests.get(url, *args, **_kwargs)
         response.raise_for_status()
         REQUEST_TIME.labels(hostname).observe(time.perf_counter() - start_timer)
         return response
-    except ConnectTimeout as e:
-        EXCEPTION_COUNTER.labels(hostname, 'ConnectTimeout').inc()
-        raise e
     except HTTPError as e:
         error_label = 'HTTP{}'.format(e.response.status_code)
-        EXCEPTION_COUNTER.labels(hostname, error_label).inc()
+        EXCEPTION_TIME.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
         raise e
     except Exception as e:
-        EXCEPTION_COUNTER.labels(hostname, 'Exception').inc()
+        error_label = e.__class__.__name__
+        EXCEPTION_TIME.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
         raise e
 
 
