@@ -28,3 +28,7 @@ WORKERS_COUNT = os.getenv('WORKERS_COUNT', '10')
 PROMETHEUS_PORT = os.getenv('PROMETHEUS_PORT', '8000')
 
 JOB_LOCK_PREFIX = 10000
+
+SKIP_PROXY = [
+    'feeds.buzzsprout.com'
+]

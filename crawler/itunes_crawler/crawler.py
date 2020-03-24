@@ -18,19 +18,25 @@ def _request_profiling(link):
     return REQUEST_TIME.labels(hostname).time()
 
 
+def _get_proxy(url):
+    if urlparse(url).hostname in settings.SKIP_PROXY:
+        return {}
+    return settings.REQUESTS_PROXY
+
+
 def _extract_itunes_id(link):
     return re.search('.+id(\d+)$', link).group(1)
 
 
 def scrap_categories():
-    link = 'https://podcasts.apple.com/us/genre/podcasts/id26'
+    url = 'https://podcasts.apple.com/us/genre/podcasts/id26'
     try:
-        with _request_profiling(link):
-            response = requests.get(link, timeout=10, proxies=settings.REQUESTS_PROXY)
+        with _request_profiling(url):
+            response = requests.get(url, timeout=10, proxies=_get_proxy(url))
         response.raise_for_status()
     except Exception as e:
         logger.error('scrap_categories.request',
-                     extra={'url': link, 'exception': e})
+                     extra={'url': url, 'exception': e})
         raise e
     try:
         categories_html = BeautifulSoup(response.content, "html.parser")
@@ -51,14 +57,14 @@ CATEGORY_LETTERS = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['*']
 
 
 def scrap_category_page(url, letter, page):
-    link = "{}?letter={}&page={}".format(url, letter, page)
+    url = "{}?letter={}&page={}".format(url, letter, page)
     try:
-        with _request_profiling(link):
-            response = requests.get(link, timeout=10, proxies=settings.REQUESTS_PROXY)
+        with _request_profiling(url):
+            response = requests.get(url, timeout=10, proxies=_get_proxy(url))
         response.raise_for_status()
     except Exception as e:
         logger.error('scrap_category_page.request',
-                     extra={'url': link, 'exception': e})
+                     extra={'url': url, 'exception': e})
         raise e
     try:
         podcasts_html = BeautifulSoup(response.content.decode('utf-8'), "html.parser")
@@ -86,7 +92,7 @@ def get_lookup(id):
     url = "https://itunes.apple.com/us/lookup?id=" + str(id)
     try:
         with _request_profiling(url):
-            request = requests.get(url, timeout=30, proxies=settings.REQUESTS_PROXY)
+            request = requests.get(url, timeout=30, proxies=_get_proxy(url))
         request.raise_for_status()
         lookup = request.json()
         return lookup['results'][0] if 'feedUrl' in lookup['results'][0] else None
@@ -102,7 +108,7 @@ def get_rss(url):
     rss = None
     try:
         with _request_profiling(url):
-            response = requests.get(url, timeout=30, proxies=settings.REQUESTS_PROXY)
+            response = requests.get(url, timeout=30, proxies=_get_proxy(url))
         response.raise_for_status()
         return response.content.decode('utf-8')
     except Exception as e:
