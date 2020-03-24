@@ -38,6 +38,11 @@ services:
       - ./config/prometheus/:/etc/prometheus/
     ports:
     - "9090:9090"
+  prometheus_exporter:
+    image: prom/node-exporter
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
   crawler:
     build: ./crawler
     restart: always
