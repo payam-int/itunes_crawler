@@ -10,7 +10,7 @@ from itunes_crawler import crawler, settings
 from itunes_crawler.models import Job, db, db_models, TopLevelCategory, Podcast, PodcastItunesLookup, PodcastRss
 
 logger = logging.getLogger('app')
-REQUEST_TIME = Summary('job_processing_profiling', 'Time spent processing job', ('type',))
+JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', ('type', 'result'))
 
 
 def bootstrap():
@@ -44,30 +44,35 @@ def bootstrap():
 def worker():
     while True:
         try:
+            start_timer = time.perf_counter()
+
             job = Job.take()
             if not job:
                 time.sleep(5)
                 continue
             try:
-                with REQUEST_TIME.labels(job.type).time():
-                    if job.type == Job.Types.TOP_LEVEL_CATEGORIES:
-                        crawl_top_categories(job)
-                    elif job.type == Job.Types.CATEGORY_LETTER:
-                        crawl_category(job)
-                    elif job.type == Job.Types.PODCAST_LOOKUP:
-                        crawl_podcast(job)
+
+                if job.type == Job.Types.TOP_LEVEL_CATEGORIES:
+                    crawl_top_categories(job)
+                elif job.type == Job.Types.CATEGORY_LETTER:
+                    crawl_category(job)
+                elif job.type == Job.Types.PODCAST_LOOKUP:
+                    crawl_podcast(job)
 
                 job.next_time_at = datetime.now() + timedelta(seconds=job.interval)
                 job.last_success_at = datetime.now()
                 job.save()
+                JOB_METRICS.labels(job.type, 'SUCCESS').observe(time.perf_counter() - start_timer)
             except Exception as e:
                 job.next_time_at = job.next_time_at + timedelta(seconds=60)
                 job.save()
+                JOB_METRICS.labels(job.type, 'FAIL').observe(time.perf_counter() - start_timer)
                 raise e
             finally:
                 job.release()
         except Exception as e:
             logger.error(e, extra={'exception': e})
+
 
 def crawl_top_categories(job):
     top_categories = crawler.scrap_categories()

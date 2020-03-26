@@ -12,8 +12,8 @@ from requests import HTTPError
 from itunes_crawler import settings
 
 logger = logging.getLogger('itunes_crawler')
-REQUEST_TIME = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
-EXCEPTION_TIME = Summary('http_request_exceptions_profiling', 'Time spent getting a url', ('host', 'type'))
+REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
+REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url', ('host', 'type'))
 
 
 def _get_proxy(hostname):
@@ -31,15 +31,15 @@ def _get(url, *args, **kwargs):
     try:
         response = requests.get(url, *args, **_kwargs)
         response.raise_for_status()
-        REQUEST_TIME.labels(hostname).observe(time.perf_counter() - start_timer)
+        REQUEST_METRICS.labels(hostname).observe(time.perf_counter() - start_timer)
         return response
     except HTTPError as e:
         error_label = 'HTTP{}'.format(e.response.status_code)
-        EXCEPTION_TIME.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
+        REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
         raise e
     except Exception as e:
         error_label = e.__class__.__name__
-        EXCEPTION_TIME.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
+        REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
         raise e
 
 
