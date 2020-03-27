@@ -17,19 +17,19 @@ REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', 
 REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url', ('host', 'type'))
 
 
-def _get_proxy(hostname):
+def _get_proxy():
     proxy = Proxy.get_random_proxy()
     if proxy:
         return {
             'http': proxy.get_proxy_string(),
             'https': proxy.get_proxy_string()
         }
-    return settings.REQUESTS_PROXY
+    return None
 
 
-def _get(url, *args, **kwargs):
+def __get(url, proxy, *args, **kwargs):
     hostname = urlparse(url).hostname
-    _kwargs = {'timeout': 10, 'proxies': _get_proxy(hostname)}
+    _kwargs = {'timeout': 10, 'proxies': proxy}
     print(_kwargs)
     _kwargs.update(kwargs)
 
@@ -46,6 +46,16 @@ def _get(url, *args, **kwargs):
     except Exception as e:
         error_label = e.__class__.__name__
         REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
+        raise e
+
+
+def _get(url, *args, **kwargs):
+    try:
+        return __get(url, settings.REQUESTS_PROXY, *args, **kwargs)
+    except Exception as e:
+        proxy = _get_proxy()
+        if proxy:
+            return __get(url, _get_proxy(), *args, **kwargs)
         raise e
 
 
