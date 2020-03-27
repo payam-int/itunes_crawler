@@ -18,10 +18,10 @@ REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spe
 
 
 def _get_proxy():
-    return {
-        'http': 'socks5://proxy_broker:8888',
-        'https': 'socks5://proxy_broker:8888',
-    }
+    # return {
+    #     'http': 'socks5://proxy_broker:8888',
+    #     'https': 'socks5://proxy_broker:8888',
+    # }
 
     proxy = Proxy.get_random_proxy()
     if proxy:
@@ -54,13 +54,13 @@ def __get(url, proxy, *args, **kwargs):
 
 
 def _get(url, *args, **kwargs):
-    # try:
-    #     return __get(url, settings.REQUESTS_PROXY, *args, **kwargs)
-    # except Exception as e:
-    proxy = _get_proxy()
-    if proxy:
-        return __get(url, proxy, *args, **kwargs)
-        # raise e
+    try:
+        proxy = _get_proxy()
+        if proxy:
+            return __get(url, proxy, *args, **kwargs)
+    except Exception as e:
+        pass
+    return __get(url, settings.REQUESTS_PROXY, *args, **kwargs)
 
 
 def _extract_itunes_id(link):
