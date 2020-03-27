@@ -130,8 +130,8 @@ def crawl_podcast(job):
             podcast_lookup.updated_at = datetime.now()
             podcast_lookup.save() or podcast_lookup.save(force_insert=True)
 
-    except:
-        pass
+    except Exception as e:
+        raise e
 
     if podcast_lookup and 'feedUrl' in podcast_lookup.itunes_lookup:
         feed_url = podcast_lookup.itunes_lookup['feedUrl']
