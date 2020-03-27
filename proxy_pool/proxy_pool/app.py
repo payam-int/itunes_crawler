@@ -30,7 +30,7 @@ def bootstrap():
 
 def find_proxies():
     LOGGER.debug("Starting find proxy")
-    start_link = 'https://hidemy.name/en/proxy-list/?anon=4'
+    start_link = 'https://hidemy.name/en/proxy-list/?maxtime=500&anon=4#list'
     proxies = list(map(lambda p: Proxy(p), scrap(start_link)))
 
     with ThreadPoolExecutor(max_workers=10) as executor:

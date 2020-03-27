@@ -30,7 +30,6 @@ def _get_proxy():
 def __get(url, proxy, *args, **kwargs):
     hostname = urlparse(url).hostname
     _kwargs = {'timeout': 10, 'proxies': proxy}
-    print(_kwargs)
     _kwargs.update(kwargs)
 
     start_timer = time.perf_counter()
@@ -55,7 +54,7 @@ def _get(url, *args, **kwargs):
     except Exception as e:
         proxy = _get_proxy()
         if proxy:
-            return __get(url, _get_proxy(), *args, **kwargs)
+            return __get(url, proxy, *args, **kwargs)
         raise e
 
 
