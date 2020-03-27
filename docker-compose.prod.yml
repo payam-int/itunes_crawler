@@ -61,6 +61,7 @@ services:
       - prometheus
       - postgres
       - redis
+      - proxy_broker
     ports:
       - 8000
   tor:
@@ -110,3 +111,7 @@ services:
       - postgres
       - selenium_hub
       - redis
+  proxy_broker:
+    image: alxgrmv/proxybroker
+    ports:
+    - 8888
