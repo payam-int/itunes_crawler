@@ -12,6 +12,14 @@ scrape_configs:
         type: A
         port: 8000
         refresh_interval: 30s
+  - job_name: 'proxy_pool'
+    scrape_interval: 30s
+    dns_sd_configs:
+      - names:
+          - "proxy_pool"
+        type: A
+        port: 8000
+        refresh_interval: 30s
   - job_name: 'exporter'
     static_configs:
       - targets: ['prometheus_exporter:9100']

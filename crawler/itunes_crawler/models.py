@@ -6,6 +6,7 @@ import signal
 import peewee_extra_fields
 from peewee import PostgresqlDatabase, Model, CharField, TextField, DateTimeField, IntegerField, AutoField, \
     ForeignKeyField
+from redis import Redis
 
 from itunes_crawler import settings
 
@@ -16,6 +17,8 @@ db = PostgresqlDatabase(settings.POSTGRES['database'], host=settings.POSTGRES['h
                         field_types=peewee_extra_fields.FIELD_TYPES, thread_safe=True)
 
 logger.info("Connected to database...")
+
+redis = Redis(host='redis')
 
 
 def close_db():
@@ -115,3 +118,33 @@ class PodcastRss(BaseModel):
 
 
 db_models = [TopLevelCategory, Job, Podcast, PodcastRss, PodcastItunesLookup]
+
+
+class Proxy():
+    def __init__(self, proxy_info: dict):
+        self._proxy_info = proxy_info
+
+    def get_proxy_string(self):
+        return "{type[0]}://{ip}:{port}".format(**self._proxy_info)
+
+    @staticmethod
+    def _get_set_key():
+        return "S:PROXY_LIST"
+
+    @staticmethod
+    def get_by_ids(ids):
+        values = redis.mget(map(lambda id: Proxy._get_redis_key(id.decode('utf-8')), ids))
+        return list(map(lambda x: Proxy(json.loads(x)), values))
+
+    @staticmethod
+    def _get_redis_key(id):
+        return "PROXY:{}".format(id)
+
+    @staticmethod
+    def get_random_proxy():
+        id = redis.srandmember(Proxy._get_set_key())
+        if id:
+            proxies = Proxy.get_by_ids([id])
+            return proxies[0] if proxies else None
+        else:
+            return None

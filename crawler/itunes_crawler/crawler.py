@@ -10,6 +10,7 @@ from prometheus_client import Summary
 from requests import HTTPError
 
 from itunes_crawler import settings
+from itunes_crawler.models import Proxy
 
 logger = logging.getLogger('itunes_crawler')
 REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
@@ -17,14 +18,19 @@ REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spe
 
 
 def _get_proxy(hostname):
-    if hostname in settings.SKIP_PROXY:
-        return {}
+    proxy = Proxy.get_random_proxy()
+    if proxy:
+        return {
+            'http': proxy.get_proxy_string(),
+            'https': proxy.get_proxy_string()
+        }
     return settings.REQUESTS_PROXY
 
 
 def _get(url, *args, **kwargs):
     hostname = urlparse(url).hostname
     _kwargs = {'timeout': 10, 'proxies': _get_proxy(hostname)}
+    print(_kwargs)
     _kwargs.update(kwargs)
 
     start_timer = time.perf_counter()
