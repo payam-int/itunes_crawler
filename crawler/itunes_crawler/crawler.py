@@ -65,7 +65,7 @@ def _extract_itunes_id(link):
 def scrap_categories():
     url = 'https://podcasts.apple.com/us/genre/podcasts/id26'
     try:
-        response = _get(url, timeout=10, proxies=_get_proxy(url))
+        response = _get(url, timeout=10)
     except Exception as e:
         logger.error('scrap_categories.request',
                      extra={'url': url, 'exception': e})
@@ -91,7 +91,7 @@ CATEGORY_LETTERS = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['*']
 def scrap_category_page(url, letter, page):
     url = "{}?letter={}&page={}".format(url, letter, page)
     try:
-        response = _get(url, timeout=10, proxies=_get_proxy(url))
+        response = _get(url, timeout=10)
         response.raise_for_status()
     except Exception as e:
         logger.error('scrap_category_page.request',
@@ -122,7 +122,7 @@ def scrap_category_page(url, letter, page):
 def get_lookup(id):
     url = "https://itunes.apple.com/us/lookup?id=" + str(id)
     try:
-        response = _get(url, timeout=30, proxies=_get_proxy(url))
+        response = _get(url, timeout=30)
         response.raise_for_status()
         lookup = response.json()
         return lookup['results'][0] if 'feedUrl' in lookup['results'][0] else None
@@ -137,7 +137,7 @@ def get_lookup(id):
 def get_rss(url):
     rss = None
     try:
-        response = _get(url, timeout=30, proxies=_get_proxy(url))
+        response = _get(url, timeout=30)
         response.raise_for_status()
         return response.content.decode('utf-8')
     except Exception as e:
