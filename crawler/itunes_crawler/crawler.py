@@ -58,9 +58,16 @@ def _get(url, *args, **kwargs):
         proxy = _get_proxy()
         if proxy:
             return __get(url, proxy, *args, **kwargs)
-    except Exception as e:
+    except:
         pass
-    return __get(url, settings.REQUESTS_PROXY, *args, **kwargs)
+    try:
+        return __get(url, settings.REQUESTS_PROXY, *args, **kwargs)
+    except:
+        pass
+    return __get(url, {
+        'http': 'socks5://proxy_broker:8888',
+        'https': 'socks5://proxy_broker:8888',
+    }, *args, **kwargs)
 
 
 def _extract_itunes_id(link):
