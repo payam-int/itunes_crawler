@@ -30,7 +30,7 @@ def find_persian_podcasts(start):
                 try:
                     rss_xml = BeautifulSoup(rss_text, 'xml')
                     language_tag = rss_xml.select_one('rss channel language')
-                    if language_tag and language_tag.string == 'fa':
+                    if language_tag and language_tag.string == 'fa' or language_tag.string == 'fa-ir':
                         data = {
                             'id': rss_entity.id,
                             'category': json.dumps([c['text'] for c in rss_xml.find_all(name='itunes:category')])
