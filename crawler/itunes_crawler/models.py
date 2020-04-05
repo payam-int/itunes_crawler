@@ -117,7 +117,18 @@ class PodcastRss(BaseModel):
     updated_at = DateTimeField(null=True)
 
 
-db_models = [TopLevelCategory, Job, Podcast, PodcastRss, PodcastItunesLookup]
+class PersianPodcasts(BaseModel):
+    id = IntegerField(primary_key=True)
+    title = TextField()
+    description = TextField()
+    link = TextField()
+    author = TextField()
+    type = TextField()
+    email = TextField()
+    category = TextField()
+
+
+db_models = [TopLevelCategory, Job, Podcast, PodcastRss, PodcastItunesLookup, PersianPodcasts]
 
 
 class Proxy():

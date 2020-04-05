@@ -18,11 +18,6 @@ REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spe
 
 
 def _get_proxy():
-    # return {
-    #     'http': 'socks5://proxy_broker:8888',
-    #     'https': 'socks5://proxy_broker:8888',
-    # }
-
     proxy = Proxy.get_random_proxy()
     if proxy:
         return {

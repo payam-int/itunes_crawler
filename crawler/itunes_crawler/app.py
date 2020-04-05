@@ -14,13 +14,13 @@ JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', (
 
 
 def bootstrap():
-    if not db.table_exists(db_models[0]._meta.table_name):
-        lock_query = Select().select(Function('pg_try_advisory_lock', [settings.JOB_LOCK_PREFIX, 0])).execute(db)
-        if lock_query[0]['pg_try_advisory_lock']:
-            try:
-                db.create_tables(db_models)
-            finally:
-                Select().select(Function('pg_advisory_unlock', [settings.JOB_LOCK_PREFIX, 0])).execute(db)
+    lock_query = Select().select(Function('pg_try_advisory_lock', [settings.JOB_LOCK_PREFIX, 0])).execute(db)
+    if lock_query[0]['pg_try_advisory_lock']:
+        try:
+            for db_model in db_models:
+                db.create_tables([db_model])
+        finally:
+            Select().select(Function('pg_advisory_unlock', [settings.JOB_LOCK_PREFIX, 0])).execute(db)
     try:
         Job(type=Job.Types.TOP_LEVEL_CATEGORIES, interval=48 * 3600).save(force_insert=True)
     except Exception as e:
