@@ -15,6 +15,8 @@ def find_persian_podcasts(start):
     try:
         for rss_entity in PodcastRss.select().where(PodcastRss.id >= start).order_by(PodcastRss.id.asc()):
             counter += 1
+            if counter < 50:
+                print(counter, 'items checked')
             if counter % 1000 == 0:
                 print(counter, 'items checked.')
             last_id = rss_entity.id
