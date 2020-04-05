@@ -46,6 +46,7 @@ def find_persian_podcasts(start):
                         PersianPodcasts(**data).save(force_insert=True)
                 except Exception as e:
                     print(e, file=sys.stderr)
+                    print('id', last_id)
     finally:
         print('Last id:', last_id)
 
