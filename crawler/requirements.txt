@@ -7,3 +7,4 @@ psycopg2==2.8.4
 requests[socks]==2.23.0
 prometheus-client==0.7.1
 redis==3.4.1
+click==7.1.1
