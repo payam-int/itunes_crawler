@@ -33,15 +33,20 @@ def find_persian_podcasts(start):
                     if language_tag and language_tag.string == 'fa':
                         data = {
                             'id': rss_entity.id,
-                            'type': rss_xml.find(name='itunes:type').string,
-                            'email': rss_xml.find(name='itunes:email').string,
-                            'title': rss_xml.find(name='title').string,
-                            'author': rss_xml.find(name='author').string,
-                            'link': rss_xml.find(name='link').string,
-                            'description': rss_xml.find(name='description').string,
-                            'generator': rss_xml.find(name='generator').string,
                             'category': json.dumps([c['text'] for c in rss_xml.find_all(name='itunes:category')])
                         }
+                        data_elements = {
+                            'type': rss_xml.find(name='itunes:type'),
+                            'email': rss_xml.find(name='itunes:email'),
+                            'title': rss_xml.find(name='title'),
+                            'author': rss_xml.find(name='author'),
+                            'link': rss_xml.find(name='link'),
+                            'description': rss_xml.find(name='description'),
+                            'generator': rss_xml.find(name='generator'),
+                        }
+
+                        for elem in data_elements:
+                            data[elem] = data_elements[elem].string if data_elements[elem] else ''
 
                         PersianPodcasts(**data).save(force_insert=True)
                 except Exception as e:
