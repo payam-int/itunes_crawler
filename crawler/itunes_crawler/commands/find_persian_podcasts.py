@@ -46,7 +46,7 @@ def find_persian_podcasts(start):
                         }
 
                         for elem in data_elements:
-                            data[elem] = data_elements[elem].string if data_elements[elem] else ''
+                            data[elem] = str(data_elements[elem].string) if data_elements[elem] else ''
 
                         PersianPodcasts(**data).save(force_insert=True)
                 except Exception as e:
