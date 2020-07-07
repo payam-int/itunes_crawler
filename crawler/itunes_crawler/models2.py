@@ -11,8 +11,7 @@ from sqlalchemy_dict import BaseModel
 from itunes_crawler import settings
 
 engine = create_engine(
-    "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**settings.POSTGRES),
-    echo=True)
+    "postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}".format(**settings.POSTGRES))
 Base = declarative_base(cls=BaseModel)
 Session = sessionmaker(bind=engine, autocommit=False)
 
@@ -35,6 +34,7 @@ class ScheduledJob(Base):
     finished_at = Column(DateTime, nullable=True)
     last_success_at = Column(DateTime, nullable=True)
     failure_at = Column(DateTime, nullable=True)
+    failures = Column(Integer, default=0)
     updated_at = Column(DateTime, onupdate=datetime.datetime.utcnow)
 
     @staticmethod
@@ -58,6 +58,7 @@ class ScheduledJob(Base):
 
     def fail(self):
         self.failure_at = datetime.datetime.utcnow()
+        self.failures += 1
         self.next_time_at = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
 
 

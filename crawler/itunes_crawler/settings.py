@@ -2,7 +2,7 @@ import logging
 import os
 
 LOGGING_FORMAT = '[%(asctime)s][%(name)s][%(levelname)s] %(message)s'
-LOGGING_LEVEL = os.getenv('LOGGING_LEVEL', logging.DEBUG)
+LOGGING_LEVEL = os.getenv('LOGGING_LEVEL', logging.WARNING)
 
 GRAYLOG_GELFUDP_LOGGER = {
     'host': os.getenv('GRAYLOG_GELFUDP_LOGGER_HOST', 'localhost'),

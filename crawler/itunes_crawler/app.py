@@ -1,5 +1,6 @@
 import datetime
 import logging
+import time
 from abc import ABC, abstractmethod
 
 from prometheus_client import Summary
@@ -16,6 +17,7 @@ def worker():
     job_executor = JobExecutor.get()
     while True:
         try:
+            time.sleep(0.1)
             session = Session()
             job = ScheduledJob.take(session)[0]
 
@@ -54,7 +56,6 @@ class JobExecutor(ABC):
 
     def execute(self, session, job: ScheduledJob):
         if self._is_responsible(job):
-            print(job.type)
             return self._execute(session, job)
         else:
             if self.next:
@@ -106,7 +107,6 @@ class CrawlCategoryPageJob(JobExecutor):
         while True:
             page += 1
             podcasts = crawler.scrap_category_page(category.link, metadata['letter'], page)
-            print(podcasts)
             for podcast in podcasts:
                 podcast_entity = ItunesListPodcast(
                     itunes_id=podcast['id'],
