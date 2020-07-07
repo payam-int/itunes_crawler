@@ -5,6 +5,8 @@ Revises: 185ae507c9bb
 Create Date: 2020-07-07 01:09:34.350682
 
 """
+import datetime
+
 from alembic import op
 # revision identifiers, used by Alembic.
 from sqlalchemy import delete
@@ -18,8 +20,9 @@ depends_on = None
 
 
 def upgrade():
-    op.execute("INSERT INTO scheduled_jobs(type, id) VALUES('{type}', '{id}')".format(
+    op.execute("INSERT INTO scheduled_jobs(type, next_time_at, id) VALUES('{type}', '{next_time_at}', '{id}')".format(
         type=ScheduledJobTypes.TOP_LEVEL_CATEGORIES.value,
+        next_time_at=str(datetime.datetime.utcnow()),
         id='1'))
 
 
