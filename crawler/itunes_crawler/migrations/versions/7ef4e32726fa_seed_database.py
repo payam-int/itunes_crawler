@@ -8,7 +8,6 @@ Create Date: 2020-07-07 01:09:34.350682
 from alembic import op
 # revision identifiers, used by Alembic.
 from sqlalchemy import delete
-from sqlalchemy.orm import Session
 
 from itunes_crawler.models2 import ScheduledJob, ScheduledJobTypes
 
@@ -19,14 +18,9 @@ depends_on = None
 
 
 def upgrade():
-    job = ScheduledJob(
-        type=ScheduledJobTypes.TOP_LEVEL_CATEGORIES,
-        id='1',
-    )
-
-    session = Session(bind=op.get_bind())
-    session.add(job)
-    session.commit()
+    op.execute("INSERT INTO scheduled_jobs(type, id) VALUES('{type}', '{id}')".format(
+        type=ScheduledJobTypes.TOP_LEVEL_CATEGORIES.value,
+        id='1'))
 
 
 def downgrade():
