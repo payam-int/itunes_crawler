@@ -19,7 +19,7 @@ def worker():
         try:
             time.sleep(0.1)
             session = Session()
-            job = (ScheduledJob.take(session) or [None])[0]
+            job = (ScheduledJob.take(session)[:] or [None])[0]
 
             try:
                 if job:
