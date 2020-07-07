@@ -10,7 +10,6 @@ from prometheus_client import Summary
 from requests import HTTPError
 
 from itunes_crawler import settings
-from itunes_crawler.models import Proxy
 
 logger = logging.getLogger('itunes_crawler')
 REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
@@ -18,18 +17,12 @@ REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spe
 
 
 def _get_proxy():
-    proxy = Proxy.get_random_proxy()
-    if proxy:
-        return {
-            'http': proxy.get_proxy_string(),
-            'https': proxy.get_proxy_string()
-        }
     return None
 
 
 def __get(url, proxy, *args, **kwargs):
     hostname = urlparse(url).hostname
-    _kwargs = {'timeout': 10, 'proxies': proxy}
+    _kwargs = {'timeout': 10}
     _kwargs.update(kwargs)
 
     start_timer = time.perf_counter()
@@ -92,7 +85,11 @@ def scrap_categories():
         gc.collect()
 
 
-CATEGORY_LETTERS = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['*']
+CATEGORY_LETTERS = [chr(i) for i in range(ord('A'), ord('Z') + 1)] + ['*'] + ["آ ", "ا ", "ب ", "پ ", "ت ", "ث ", "ج ",
+                                                                              "چ ", "ح "
+    , "خ ", "د ", "ذ ", "ر ", "ز ", "ژ ", "س ", "ش ", "ص ", "ض ", "ط ", "ظ ", "ع ", "غ ", "ف ", "ق ", "ک ", "گ ", "ل ",
+                                                                              "م ", "ن ", "و ", "ه ", "ي "
+    , "ء ", "ة", "ئ"]
 
 
 def scrap_category_page(url, letter, page):
@@ -106,18 +103,11 @@ def scrap_category_page(url, letter, page):
         raise e
     try:
         podcasts_html = BeautifulSoup(response.content.decode('utf-8'), "html.parser")
-
-        for paginate_link in podcasts_html.select('ul.paginate li a'):
-            if paginate_link.string and str(paginate_link.string) == str(page):
-                break
-        else:
-            return []
-
         podcasts = []
         for podcast in podcasts_html.select('#selectedcontent ul>li a'):
             podcasts.append({
-                'itunes_title': str(podcast.string),
-                'itunes_link': str(podcast['href']),
+                'title': str(podcast.string),
+                'link': str(podcast['href']),
                 'id': _extract_itunes_id(str(podcast['href']))
             })
         return podcasts

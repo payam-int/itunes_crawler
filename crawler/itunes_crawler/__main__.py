@@ -6,7 +6,7 @@ import graypy
 import prometheus_client
 
 from itunes_crawler import settings
-from itunes_crawler.app import bootstrap, worker
+from itunes_crawler.app import worker
 
 prometheus_client.start_http_server(int(settings.PROMETHEUS_PORT))
 
@@ -23,7 +23,6 @@ logging.basicConfig(level=int(settings.LOGGING_LEVEL), handlers=logging_handlers
 
 RUNNING_JOBS_METRIC = prometheus_client.Gauge('running_jobs', 'Number of running jobs')
 
-bootstrap()
 threads = [threading.Thread(target=worker) for _ in range(0, int(settings.WORKERS_COUNT))]
 for thread in threads:
     thread.start()

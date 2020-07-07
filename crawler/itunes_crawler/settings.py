@@ -24,7 +24,7 @@ REQUESTS_PROXY = {
     'https': os.getenv('REQUESTS_PROXY_HTTPS', 'socks5://localhost:9050'),
 }
 
-WORKERS_COUNT = os.getenv('WORKERS_COUNT', '10')
+WORKERS_COUNT = os.getenv('WORKERS_COUNT', '1')
 PROMETHEUS_PORT = os.getenv('PROMETHEUS_PORT', '8000')
 
 JOB_LOCK_PREFIX = 10000
