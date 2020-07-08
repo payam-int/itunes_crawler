@@ -108,14 +108,14 @@ class CrawlCategoryPageJob(JobExecutor):
         page = 0
         while True:
             page += 1
-            podcasts = crawler.scrap_category_page(category.link, metadata['letter'], page)
+            podcasts = crawler.scrap_category_page(category.link, metadata['letter'].strip(), page)
             for podcast in podcasts:
                 podcast_entity = ItunesListPodcast(
                     itunes_id=podcast['id'],
                     title=podcast['title'],
                     link=podcast['link'],
                     itunes_category_id=category.itunes_id,
-                    category_letter=metadata['letter'],
+                    category_letter=metadata['letter'].strip(),
                     category_page=page
                 )
 
