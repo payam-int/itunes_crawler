@@ -18,31 +18,31 @@ services:
 #      - elasticsearch
 #    ports:
 #      - "${GRAYLOG_PORT}:9000"
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "${GRAFANA_PORT}:3000"
-    volumes:
-      - ./data/grafana:/var/lib/grafana
-    environment:
-      - "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}"
-      - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}"
-    user: "0"
-    depends_on:
-      - prometheus
-  prometheus:
-    image: prom/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    volumes:
-      - ./config/prometheus/:/etc/prometheus/
-    ports:
-      - "9090:9090"
-  prometheus_exporter:
-    image: prom/node-exporter
-    pid: host
-    volumes:
-      - /:/host:ro,rslave
+#  grafana:
+#    image: grafana/grafana
+#    ports:
+#      - "${GRAFANA_PORT}:3000"
+#    volumes:
+#      - ./data/grafana:/var/lib/grafana
+#    environment:
+#      - "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}"
+#      - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}"
+#    user: "0"
+#    depends_on:
+#      - prometheus
+#  prometheus:
+#    image: prom/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#    volumes:
+#      - ./config/prometheus/:/etc/prometheus/
+#    ports:
+#      - "9090:9090"
+#  prometheus_exporter:
+#    image: prom/node-exporter
+#    pid: host
+#    volumes:
+#      - /:/host:ro,rslave
   crawler:
     build: ./crawler
     restart: always
