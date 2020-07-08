@@ -10,7 +10,7 @@ from itunes_crawler.models2 import Session, ScheduledJob, ScheduledJobTypes, Itu
     ItunesPodcastLookup, ItunesPodcastRss
 
 logger = logging.getLogger('app')
-JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', ('type'))
+JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', ('type',))
 TAKING_JOB_METRICS = Summary('taking_job_profiling', 'Time spent taking a job', ())
 LOOP_METRICS = Summary('loop_profiling', 'Time spent on loop', ())
 
