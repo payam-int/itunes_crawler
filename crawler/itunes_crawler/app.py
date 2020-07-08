@@ -22,6 +22,7 @@ def worker():
             try:
                 time.sleep(0.1)
                 session = Session()
+                job = None
                 with TAKING_JOB_METRICS.time():
                     job = (ScheduledJob.take(session)[:] or [None])[0]
 
