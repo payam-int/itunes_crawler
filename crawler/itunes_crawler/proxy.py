@@ -12,7 +12,7 @@ logger = logging.getLogger('itunes_crawler.proxy')
 REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host', 'proxy'))
 REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url',
                                   ('host', 'type', 'proxy'))
-NO_PROXY_METRICS = Counter('no_proxy_counter', ('type',))
+NO_PROXY_METRICS = Counter('no_proxy_counter', 'counts when there is no proxy available', ('type',))
 
 
 class CircuitBrokenException(Exception):

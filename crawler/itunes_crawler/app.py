@@ -8,6 +8,7 @@ from prometheus_client import Summary
 from itunes_crawler import crawler
 from itunes_crawler.models2 import Session, ScheduledJob, ScheduledJobTypes, ItunesTopLevelCategory, ItunesListPodcast, \
     ItunesPodcastLookup, ItunesPodcastRss
+from itunes_crawler.proxy import CircuitBrokenException
 
 logger = logging.getLogger('app')
 JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', ('type',))
@@ -43,6 +44,8 @@ def worker():
                 finally:
                     session.commit()
                     session.close()
+            except CircuitBrokenException:
+                pass
             except Exception as e:
                 logger.exception(e)
 
