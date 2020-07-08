@@ -1,7 +1,7 @@
 import datetime
 import enum
 
-from sqlalchemy import Column, Enum, String, JSON, DateTime, create_engine, asc, Integer
+from sqlalchemy import Column, Enum, String, JSON, DateTime, create_engine, asc, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -77,6 +77,7 @@ class ItunesListPodcast(Base):
     itunes_id = Column(String, primary_key=True)
     title = Column(String, nullable=False)
     link = Column(String, nullable=False)
+    itunes_category_id = Column(String, ForeignKey('itunes_top_level_categories.itunes_id'))
     category_page = Column(Integer, nullable=False)
     category_letter = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
