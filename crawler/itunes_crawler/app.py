@@ -114,6 +114,7 @@ class CrawlCategoryPageJob(JobExecutor):
                     itunes_id=podcast['id'],
                     title=podcast['title'],
                     link=podcast['link'],
+                    itunes_category_id=category.itunes_id,
                     category_letter=metadata['letter'],
                     category_page=page
                 )
