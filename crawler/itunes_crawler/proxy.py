@@ -30,8 +30,9 @@ class Circuit:
         return not self.blocked or self.block_timestamp < datetime.now().timestamp() - 5 * 60
 
     def failed(self):
-        if self.blocked:
-            return
+        if self.blocked and self.block_timestamp < datetime.now().timestamp() - 5 * 60:
+            self.blocked = False
+            self.errors = 0
         if self.last_expire is None:
             self.last_expire = datetime.now().timestamp()
         if self.last_expire < datetime.now().timestamp() - 3600:
@@ -103,5 +104,6 @@ def get_by_proxy(url, *args, **kwargs):
         error_label = e.__class__.__name__
         REQUEST_FAILURE_METRICS.labels(hostname, error_label, proxy_name).observe(time.perf_counter() - start_timer)
         raise e
+
 
 print(get_by_proxy('https://ifconfig.me/ip'))
