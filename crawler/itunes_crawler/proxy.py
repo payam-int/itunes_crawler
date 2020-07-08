@@ -82,7 +82,7 @@ def get_by_proxy(url, *args, **kwargs):
 
     proxy_name, proxy = proxy_factory.get_proxy(hostname)
 
-    _kwargs = {'timeout': 20, 'proxy': proxy}
+    _kwargs = {'timeout': 20, 'proxies': proxy}
     _kwargs.update(kwargs)
 
     start_timer = time.perf_counter()
@@ -103,3 +103,5 @@ def get_by_proxy(url, *args, **kwargs):
         error_label = e.__class__.__name__
         REQUEST_FAILURE_METRICS.labels(hostname, error_label, proxy_name).observe(time.perf_counter() - start_timer)
         raise e
+
+print(get_by_proxy('https://ifconfig.me/ip'))
