@@ -28,10 +28,11 @@ def worker():
 
                 try:
                     if job:
-                        with JOB_METRICS.labels(job.type).time():
-                            job_executor.execute(session, job)
+                        start_timer = time.perf_counter()
+                        job_executor.execute(session, job)
                         job.success(datetime.timedelta(days=2))
                         session.add(job)
+                        JOB_METRICS.labels(job.type).observe(time.perf_counter() - start_timer)
                     else:
                         time.sleep(1)
                 except Exception as e:
