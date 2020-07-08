@@ -101,7 +101,5 @@ def get_by_proxy(url, *args, **kwargs):
         raise e
     except Exception as e:
         error_label = e.__class__.__name__
-        if error_label == 'ReadTimeout':
-            proxy_factory.failed(hostname, proxy_name)
         REQUEST_FAILURE_METRICS.labels(hostname, error_label, proxy_name).observe(time.perf_counter() - start_timer)
         raise e
