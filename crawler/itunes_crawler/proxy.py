@@ -5,12 +5,14 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 import requests
-from prometheus_client import Summary
+from prometheus_client import Summary, Counter
 from requests import HTTPError
 
 logger = logging.getLogger('itunes_crawler.proxy')
-REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
-REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url', ('host', 'type'))
+REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host', 'proxy'))
+REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url',
+                                  ('host', 'type', 'proxy'))
+NO_PROXY_METRICS = Counter('no_proxy_counter', ('type',))
 
 
 class CircuitBrokenException(Exception):
@@ -61,6 +63,7 @@ class ProxyFactory(ContextDecorator):
             key = self._get_key(proxy_name, hostname)
             if key not in self.circuits or self.circuits[key].check():
                 return proxy_name, ProxyFactory.PROXIES[proxy_name]
+        NO_PROXY_METRICS.labels(hostname).inc()
         raise CircuitBrokenException('No proxy for {}'.format(hostname))
 
     def failed(self, hostname, proxy_name):
@@ -86,11 +89,11 @@ def get_by_proxy(url, *args, **kwargs):
     try:
         response = requests.get(url, *args, **_kwargs)
         response.raise_for_status()
-        REQUEST_METRICS.labels(hostname).observe(time.perf_counter() - start_timer)
+        REQUEST_METRICS.labels(hostname, proxy_name).observe(time.perf_counter() - start_timer)
         return response
     except HTTPError as e:
         error_label = 'HTTP{}'.format(e.response.status_code)
-        REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
+        REQUEST_FAILURE_METRICS.labels(hostname, error_label, proxy_name).observe(time.perf_counter() - start_timer)
 
         if e.response.status_code in [403, 503]:
             proxy_factory.failed(hostname, proxy_name)
@@ -100,5 +103,5 @@ def get_by_proxy(url, *args, **kwargs):
         error_label = e.__class__.__name__
         if error_label == 'ReadTimeout':
             proxy_factory.failed(hostname, proxy_name)
-        REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
+        REQUEST_FAILURE_METRICS.labels(hostname, error_label, proxy_name).observe(time.perf_counter() - start_timer)
         raise e
