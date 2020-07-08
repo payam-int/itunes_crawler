@@ -82,7 +82,7 @@ def get_by_proxy(url, *args, **kwargs):
 
     proxy_name, proxy = proxy_factory.get_proxy(hostname)
 
-    _kwargs = {'timeout': 20}
+    _kwargs = {'timeout': 20, 'proxy': proxy}
     _kwargs.update(kwargs)
 
     start_timer = time.perf_counter()
