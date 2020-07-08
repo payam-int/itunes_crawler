@@ -1,48 +1,48 @@
 version: '3.4'
 services:
-#  mongo:
-#    image: mongo:3
-#  elasticsearch:
-#    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.5
-#    environment:
-#      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
-#      discovery.type: single-node
-#  graylog:
-#    image: graylog/graylog:3.2
-#    environment:
-#      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_SECRET}
-#      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD}
-#      - GRAYLOG_HTTP_EXTERNAL_URI=http://${GRAYLOG_HOSTNAME}:${GRAYLOG_PORT}/
-#    depends_on:
-#      - mongo
-#      - elasticsearch
-#    ports:
-#      - "${GRAYLOG_PORT}:9000"
-#  grafana:
-#    image: grafana/grafana
-#    ports:
-#      - "${GRAFANA_PORT}:3000"
-#    volumes:
-#      - ./data/grafana:/var/lib/grafana
-#    environment:
-#      - "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}"
-#      - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}"
-#    user: "0"
-#    depends_on:
-#      - prometheus
-#  prometheus:
-#    image: prom/prometheus
-#    command:
-#      - '--config.file=/etc/prometheus/prometheus.yml'
-#    volumes:
-#      - ./config/prometheus/:/etc/prometheus/
-#    ports:
-#      - "9090:9090"
-#  prometheus_exporter:
-#    image: prom/node-exporter
-#    pid: host
-#    volumes:
-#      - /:/host:ro,rslave
+  #  mongo:
+  #    image: mongo:3
+  #  elasticsearch:
+  #    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.5
+  #    environment:
+  #      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+  #      discovery.type: single-node
+  #  graylog:
+  #    image: graylog/graylog:3.2
+  #    environment:
+  #      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_SECRET}
+  #      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD}
+  #      - GRAYLOG_HTTP_EXTERNAL_URI=http://${GRAYLOG_HOSTNAME}:${GRAYLOG_PORT}/
+  #    depends_on:
+  #      - mongo
+  #      - elasticsearch
+  #    ports:
+  #      - "${GRAYLOG_PORT}:9000"
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - "GF_SECURITY_ADMIN_USER=${GRAFANA_USER}"
+      - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}"
+    user: "0"
+    depends_on:
+      - prometheus
+  prometheus:
+    image: prom/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    volumes:
+      - ./config/prometheus/:/etc/prometheus/
+    ports:
+      - "9090:9090"
+  #  prometheus_exporter:
+  #    image: prom/node-exporter
+  #    pid: host
+  #    volumes:
+  #      - /:/host:ro,rslave
   crawler:
     build: ./crawler
     restart: always
@@ -56,20 +56,20 @@ services:
       - POSTGRES_DB
       - LOGGING_LEVEL=20
     depends_on:
-#      - prometheus
+      #      - prometheus
       - postgres
     ports:
       - 8000
-#  tor:
-#    image: dperson/torproxy
-#    ports:
-#      - 9050
+  #  tor:
+  #    image: dperson/torproxy
+  #    ports:
+  #      - 9050
   metabase:
     image: metabase/metabase
     ports:
       - 3000:3000
-#  redis:
-#    image: redis
+  #  redis:
+  #    image: redis
   postgres:
     image: postgres
     restart: always

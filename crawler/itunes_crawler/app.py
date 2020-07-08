@@ -10,33 +10,38 @@ from itunes_crawler.models2 import Session, ScheduledJob, ScheduledJobTypes, Itu
     ItunesPodcastLookup, ItunesPodcastRss
 
 logger = logging.getLogger('app')
-JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', ('type', 'result'))
+JOB_METRICS = Summary('job_processing_profiling', 'Time spent processing job', ('type'))
+TAKING_JOB_METRICS = Summary('taking_job_profiling', 'Time spent taking a job', ())
+LOOP_METRICS = Summary('loop_profiling', 'Time spent on loop', ())
 
 
 def worker():
     job_executor = JobExecutor.get()
     while True:
-        try:
-            time.sleep(0.1)
-            session = Session()
-            job = (ScheduledJob.take(session)[:] or [None])[0]
-
+        with LOOP_METRICS.time():
             try:
-                if job:
-                    job_executor.execute(session, job)
-                    job.success(datetime.timedelta(days=2))
+                time.sleep(0.1)
+                session = Session()
+                with TAKING_JOB_METRICS.time():
+                    job = (ScheduledJob.take(session)[:] or [None])[0]
+
+                try:
+                    if job:
+                        with JOB_METRICS.labels(job.type).time():
+                            job_executor.execute(session, job)
+                        job.success(datetime.timedelta(days=2))
+                        session.add(job)
+                    else:
+                        time.sleep(1)
+                except Exception as e:
+                    session.rollback()
+                    job.fail()
                     session.add(job)
-                else:
-                    time.sleep(1)
+                finally:
+                    session.commit()
+                    session.close()
             except Exception as e:
-                session.rollback()
-                job.fail()
-                session.add(job)
-            finally:
-                session.commit()
-                session.close()
-        except Exception as e:
-            logger.exception(e)
+                logger.exception(e)
 
 
 class JobExecutor(ABC):
