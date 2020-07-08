@@ -55,15 +55,16 @@ services:
       - POSTGRES_PASSWORD
       - POSTGRES_DB
       - LOGGING_LEVEL=20
+      - WORKERS_COUNT=5
     depends_on:
       #      - prometheus
       - postgres
     ports:
       - 8000
-  #  tor:
-  #    image: dperson/torproxy
-  #    ports:
-  #      - 9050
+  tor:
+    image: dperson/torproxy
+    ports:
+      - 9050
   metabase:
     image: metabase/metabase
     ports:

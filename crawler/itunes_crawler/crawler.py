@@ -1,61 +1,16 @@
 import gc
 import logging
 import re
-import time
-from urllib.parse import urlparse
 
-import requests
 from bs4 import BeautifulSoup
-from prometheus_client import Summary
-from requests import HTTPError
 
-from itunes_crawler import settings
+from itunes_crawler.proxy import get_by_proxy
 
 logger = logging.getLogger('itunes_crawler')
-REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', ('host',))
-REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url', ('host', 'type'))
-
-
-def _get_proxy():
-    return None
-
-
-def __get(url, proxy, *args, **kwargs):
-    hostname = urlparse(url).hostname
-    _kwargs = {'timeout': 10}
-    _kwargs.update(kwargs)
-
-    start_timer = time.perf_counter()
-    try:
-        response = requests.get(url, *args, **_kwargs)
-        response.raise_for_status()
-        REQUEST_METRICS.labels(hostname).observe(time.perf_counter() - start_timer)
-        return response
-    except HTTPError as e:
-        error_label = 'HTTP{}'.format(e.response.status_code)
-        REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
-        raise e
-    except Exception as e:
-        error_label = e.__class__.__name__
-        REQUEST_FAILURE_METRICS.labels(hostname, error_label).observe(time.perf_counter() - start_timer)
-        raise e
 
 
 def _get(url, *args, **kwargs):
-    try:
-        proxy = _get_proxy()
-        if proxy:
-            return __get(url, proxy, *args, **kwargs)
-    except:
-        pass
-    try:
-        return __get(url, settings.REQUESTS_PROXY, *args, **kwargs)
-    except:
-        pass
-    return __get(url, {
-        'http': 'socks5://proxy_broker:8888',
-        'https': 'socks5://proxy_broker:8888',
-    }, *args, **kwargs)
+    return get_by_proxy(url, *args, **kwargs)
 
 
 def _extract_itunes_id(link):
