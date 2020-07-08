@@ -38,6 +38,7 @@ def worker():
                     session.rollback()
                     job.fail()
                     session.add(job)
+                    raise e
                 finally:
                     session.commit()
                     session.close()
