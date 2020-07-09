@@ -30,8 +30,6 @@ class PodcastRSSParser:
         result = dict()
         for elem_name in fields:
             child = elem.find(name=elem_name, recursive=False)
-            if not child:
-                continue
             result[elem_name] = str(child.string) if child else None
         return result
 
