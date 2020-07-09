@@ -1,12 +1,19 @@
 import logging
 
 import click
-from dateutil.parser import parse as parse_date
+from dateutil.parser import parse
 
 from itunes_crawler.models2 import Session, ItunesPodcastRss, Podcast, PodcastFeedData
 from itunes_crawler.podcast_rss import PodcastRSSParser, PersianPodcastClassifier
 
 logger = logging.getLogger('find_persian_podcasts')
+
+
+def parse_date(str):
+    try:
+        return parse(str)
+    except:
+        return None
 
 
 @click.command()
