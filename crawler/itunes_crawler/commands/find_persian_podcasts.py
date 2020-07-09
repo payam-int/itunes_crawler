@@ -64,6 +64,7 @@ def find_persian_podcasts(start):
                 logger.exception(e, itunes_id=podcast_rss.itunes_id)
             last_id = podcast_rss.itunes_id
         session.commit()
+        print(last_id)
 
 
 if __name__ == '__main__':
