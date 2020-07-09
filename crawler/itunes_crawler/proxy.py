@@ -13,6 +13,7 @@ REQUEST_METRICS = Summary('http_request_profiling', 'Time spent getting a url', 
 REQUEST_FAILURE_METRICS = Summary('http_request_exceptions_profiling', 'Time spent getting a url',
                                   ('host', 'type', 'proxy'))
 NO_PROXY_METRICS = Counter('no_proxy_counter', 'counts when there is no proxy available', ('type',))
+CIRCUITS_BROKEN = Counter('circuits_broken', 'counts circuits broken', ('proxy', 'hostname'))
 
 
 class CircuitBrokenException(Exception):
@@ -42,6 +43,8 @@ class Circuit:
         if self.errors > 100:
             self.blocked = True
             self.block_timestamp = datetime.now().timestamp()
+            return True
+        return False
 
 
 class ProxyFactory(ContextDecorator):
@@ -71,7 +74,8 @@ class ProxyFactory(ContextDecorator):
         key = self._get_key(proxy_name, hostname)
         if key not in self.circuits:
             self.circuits[key] = Circuit()
-        self.circuits[key].failed()
+        if self.circuits[key].failed():
+            CIRCUITS_BROKEN.labels(proxy_name, hostname).inc()
         logger.warning("Circuit %s :: %s broken", proxy_name, hostname)
 
 
