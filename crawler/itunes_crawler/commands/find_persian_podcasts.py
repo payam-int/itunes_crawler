@@ -68,6 +68,7 @@ def find_persian_podcasts(start):
                 session.merge(itunes_rss_data)
             except Exception as e:
                 logger.exception(e)
+                logger.error("error: " + podcast_rss.itunes_id)
             last_id = podcast_rss.itunes_id
         session.commit()
         print(last_id)
