@@ -25,9 +25,13 @@ class PodcastRSSParser:
         return rss.strip('\n\uFEFF ')
 
     def _extract_children(self, elem, fields):
+        if not elem:
+            return dict()
         result = dict()
         for elem_name in fields:
             child = elem.find(name=elem_name, recursive=False)
+            if not child:
+                continue
             result[elem_name] = str(child.string) if child else None
         return result
 

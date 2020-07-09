@@ -27,7 +27,6 @@ def find_persian_podcasts(start):
         if not podcasts_rss:
             break
         for podcast_rss in podcasts_rss:
-            podcast_data = None
             try:
                 podcast_data = podcast_rss_parser.extract(podcast_rss.rss)
                 feed_data = PodcastFeedData(
