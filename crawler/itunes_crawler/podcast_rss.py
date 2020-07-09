@@ -33,14 +33,14 @@ class PodcastRSSParser:
             result[elem_name] = str(child.string) if child else None
         return result
 
-    def _extract_headers(self, channel):
-        headers = self._extract_children(channel,
+    def _extract_headers(self, xml):
+        headers = self._extract_children(xml.channel,
                                          ['title', 'description', 'link', 'generator', 'lastBuildDate', 'author',
                                           'copyright', 'language', 'itunes:author', 'itunes:summary',
                                           'itunes:type'])
-        headers['itunes_category'] = [str(c['text']) for c in channel.find_all(name='itunes:category')]
+        headers['itunes_category'] = [str(c['text']) for c in xml.find_all(name='itunes:category')]
 
-        itunes_owner = channel.find(name='itunes:owner', recursive=False)
+        itunes_owner = xml.channel.find(name='itunes:owner', recursive=False)
         if itunes_owner:
             headers['itunes:owner'] = self._extract_children(itunes_owner, ['itunes:email', 'itunes:name'])
 
@@ -48,8 +48,7 @@ class PodcastRSSParser:
 
     def _extract_items(self, xml):
         items = []
-        channel = xml.find(name='channel')
-        for item in channel.find_all(name='item', recursive=False):
+        for item in xml.channel.find_all(name='item', recursive=False):
             item_fields = self._extract_children(item, ['title', 'description', 'link', 'pubDate', 'itunes:duration',
                                                         'itunes:episode'])
             items.append(item_fields)
