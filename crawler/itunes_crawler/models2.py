@@ -55,11 +55,14 @@ class ScheduledJob(Base):
     def success(self, interval):
         self.last_success_at = datetime.datetime.utcnow()
         self.next_time_at = datetime.datetime.utcnow() + interval
+        self.failures = 0
 
     def fail(self):
         self.failure_at = datetime.datetime.utcnow()
         self.failures += 1
-        self.next_time_at = datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+
+        next_time_in_minutes = min(max(round((self.failures / 2) ** 2), 1), 1440) * 5
+        self.next_time_at = datetime.datetime.utcnow() + datetime.timedelta(minutes=next_time_in_minutes)
 
 
 class ItunesTopLevelCategory(Base):
