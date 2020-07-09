@@ -100,3 +100,32 @@ class ItunesPodcastRss(Base):
     rss = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.datetime.utcnow)
+
+
+class PodcastFeedData(Base):
+    __tablename__ = 'podcast_feed_data'
+
+    itunes_id = Column(String, primary_key=True)
+    feed = Column(JSON)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.utcnow)
+
+
+class Podcast(Base):
+    __tablename__ = 'podcasts'
+
+    itunes_id = Column(String, primary_key=True)
+    title = Column(String)
+    description = Column(String)
+    link = Column(String)
+    generator = Column(String)
+    last_build_date = Column(DateTime, index=True)
+    author = Column(String)
+    email = Column(String)
+    copyright = Column(String)
+    language = Column(String, index=True)
+    itunes_type = Column(String)
+    category = Column(JSON)
+    last_episode_release = Column(DateTime, nullable=True)
+    episodes = Column(Integer, nullable=False, default=0)
+    is_persian = Column(Integer, index=True)

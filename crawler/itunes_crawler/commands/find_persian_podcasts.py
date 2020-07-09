@@ -1,59 +1,69 @@
-import json
-import sys
+import logging
 
 import click
-from bs4 import BeautifulSoup
+from dateutil.parser import parse as parse_date
 
-from itunes_crawler.models import PersianPodcasts, PodcastRss
+from itunes_crawler.models2 import Session, ItunesPodcastRss, Podcast, PodcastFeedData
+from itunes_crawler.podcast_rss import PodcastRSSParser, PersianPodcastClassifier
+
+logger = logging.getLogger('find_persian_podcasts')
 
 
 @click.command()
 @click.option('-s', '--start', type=int, default=0)
 def find_persian_podcasts(start):
-    last_id = 0
-    counter = 0
-    total_counts = PodcastRss.select().where(PodcastRss.id >= start).count()
-    print(total_counts, 'total items.')
-    page_size = 100
-    pages = int(total_counts / page_size)
-    try:
-        for current_page in range(0, pages + 1):
-            for rss_entity in PodcastRss.select().where(PodcastRss.id >= start).order_by(PodcastRss.id.asc()).paginate(
-                    current_page, page_size):
-                counter += 1
-                if counter < 20:
-                    print(counter, 'items checked')
-                if counter % 1000 == 0:
-                    print(counter, 'items checked.')
-                last_id = rss_entity.id
-                rss_text = str(rss_entity.rss).strip('\n\uFEFF ')
-                try:
-                    rss_xml = BeautifulSoup(rss_text, 'xml')
-                    language_tag = rss_xml.select_one('rss channel language')
-                    if language_tag and language_tag.string == 'fa' or language_tag.string == 'fa-ir':
-                        data = {
-                            'id': rss_entity.id,
-                            'category': json.dumps([c['text'] for c in rss_xml.find_all(name='itunes:category')])
-                        }
-                        data_elements = {
-                            'type': rss_xml.find(name='itunes:type'),
-                            'email': rss_xml.find(name='itunes:email'),
-                            'title': rss_xml.find(name='title'),
-                            'author': rss_xml.find(name='author'),
-                            'link': rss_xml.find(name='link'),
-                            'description': rss_xml.find(name='description'),
-                            'generator': rss_xml.find(name='generator'),
-                        }
+    session = Session()
+    last_id = str(start)
+    podcast_rss_parser = PodcastRSSParser()
+    persian_podcast_classifier = PersianPodcastClassifier()
+    while True:
+        podcasts_rss = session \
+            .query(ItunesPodcastRss) \
+            .filter(ItunesPodcastRss.itunes_id > last_id) \
+            .order_by(ItunesPodcastRss.itunes_id) \
+            .limit(50) \
+            .all()
 
-                        for elem in data_elements:
-                            data[elem] = str(data_elements[elem].string) if data_elements[elem] else ''
+        if not podcasts_rss:
+            break
+        for podcast_rss in podcasts_rss:
+            podcast_data = None
+            try:
+                podcast_data = podcast_rss_parser.extract(podcast_rss.rss)
+                feed_data = PodcastFeedData(
+                    itunes_id=podcast_rss.itunes_id,
+                    feed=podcast_data
+                )
+                session.merge(feed_data)
 
-                        PersianPodcasts(**data).save(force_insert=True)
-                except Exception as e:
-                    print(e, file=sys.stderr)
-                    print('id', last_id)
-    finally:
-        print('Last id:', last_id)
+                is_persian = persian_podcast_classifier.classify(podcast_data)
+                last_episode_release = parse_date(podcast_data['items'][0]['pubDate']) if podcast_data[
+                    'items'] else None
+                episodes = len(podcast_data['items'])
+
+                itunes_rss_data = Podcast(
+                    itunes_id=podcast_rss.itunes_id,
+                    title=podcast_data['title'],
+                    description=podcast_data['description'],
+                    link=podcast_data['link'],
+                    generator=podcast_data['generator'],
+                    last_build_date=parse_date(podcast_data['lastBuildDate']) if podcast_data[
+                        'lastBuildDate'] else None,
+                    author=podcast_data['author'],
+                    email=podcast_data['itunes:owner']['itunes:email'] if 'itunes:owner' in podcast_data else None,
+                    copyright=podcast_data['copyright'],
+                    language=podcast_data['language'],
+                    itunes_type=podcast_data['itunes:type'],
+                    category=podcast_data['itunes_category'],
+                    last_episode_release=last_episode_release,
+                    episodes=episodes,
+                    is_persian=is_persian
+                )
+                session.merge(itunes_rss_data)
+            except Exception as e:
+                logger.exception(e, itunes_id=podcast_rss.itunes_id)
+            last_id = podcast_rss.itunes_id
+        session.commit()
 
 
 if __name__ == '__main__':
