@@ -19,11 +19,11 @@ def parse_date(str):
 @click.command()
 @click.option('-s', '--start', type=int, default=0)
 def find_persian_podcasts(start):
-    session = Session()
     last_id = str(start)
     podcast_rss_parser = PodcastRSSParser()
     persian_podcast_classifier = PersianPodcastClassifier()
     while True:
+        session = Session()
         podcasts_rss = session \
             .query(ItunesPodcastRss) \
             .filter(ItunesPodcastRss.itunes_id > last_id) \
