@@ -69,7 +69,7 @@ def find_persian_podcasts(start):
 
         if not podcasts_rss:
             break
-        for podcast_rss in podcasts_rss:
+        for podcast_rss in podcasts_rss[:]:
             retry = 3
             while retry > 0:
                 try:
@@ -85,6 +85,7 @@ def find_persian_podcasts(start):
                     session = Session()
             last_id = podcast_rss.itunes_id
         print(last_id)
+
 
 if __name__ == '__main__':
     find_persian_podcasts()
