@@ -76,12 +76,13 @@ def find_persian_podcasts(start):
                 try:
                     do_your_shit(session2, podcast_rss)
                     session2.commit()
-                    retry = 0
+                    break
                 except InvalidRequestError as e0:
                     retry -= 1
                 except Exception as e:
                     logger.exception(e)
                     logger.error("error: " + podcast_rss.itunes_id)
+                    break
                 finally:
                     session2 = Session()
             last_id = podcast_rss.itunes_id
