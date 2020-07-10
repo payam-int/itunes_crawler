@@ -70,7 +70,7 @@ def find_persian_podcasts(start):
         if not podcasts_rss:
             break
         session2 = Session()
-        for podcast_rss in podcasts_rss[:]:
+        for podcast_rss in podcasts_rss:
             retry = 3
             while retry > 0:
                 try:
