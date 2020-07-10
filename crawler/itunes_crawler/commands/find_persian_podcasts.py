@@ -69,10 +69,10 @@ def find_persian_podcasts(start):
 
         if not podcasts_rss:
             break
+        session2 = Session()
         for podcast_rss in podcasts_rss[:]:
             retry = 3
             while retry > 0:
-                session2 = Session()
                 try:
                     do_your_shit(session2, podcast_rss)
                     session2.commit()
